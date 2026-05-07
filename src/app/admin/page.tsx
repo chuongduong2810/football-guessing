@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Trophy, Swords, BarChart3, Users, ClipboardCheck } from "lucide-react";
+import { Trophy, Swords, BarChart3, Users, Satellite } from "lucide-react";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -89,6 +89,13 @@ export default async function AdminDashboard() {
           className="bg-terracotta text-ivory rounded-xl px-6 py-2.5 hover:bg-coral transition-colors font-medium"
         >
           Manage Users
+        </Link>
+        <Link
+          href="/admin/import"
+          className="flex items-center gap-2 bg-near-black text-ivory rounded-xl px-6 py-2.5 hover:bg-dark-surface transition-colors font-medium"
+        >
+          <Satellite className="w-4 h-4" />
+          Import Matches
         </Link>
       </div>
     </div>

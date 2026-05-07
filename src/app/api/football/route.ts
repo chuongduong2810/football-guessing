@@ -200,3 +200,80 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ synced, results });
 }
+
+export async function PUT(request: Request) {
+  if (!API_FOOTBALL_KEY) {
+    return NextResponse.json(
+      { error: "API_FOOTBALL_KEY not configured" },
+      { status: 500 }
+    );
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const { fixtures, tournament_id } = body as {
+    fixtures: {
+      home_team: string;
+      away_team: string;
+      home_logo: string;
+      away_logo: string;
+      date: string;
+      status: string;
+      home_score: number | null;
+      away_score: number | null;
+    }[];
+    tournament_id: string;
+  };
+
+  if (!fixtures?.length || !tournament_id) {
+    return NextResponse.json(
+      { error: "fixtures and tournament_id are required" },
+      { status: 400 }
+    );
+  }
+
+  const rows = fixtures.map((f) => {
+    const apiStatus = f.status;
+    const isFinished = ["FT", "AET", "PEN"].includes(apiStatus);
+    const isLive = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"].includes(apiStatus);
+
+    return {
+      tournament_id,
+      home_team: f.home_team,
+      away_team: f.away_team,
+      home_logo: f.home_logo || null,
+      away_logo: f.away_logo || null,
+      match_time: f.date,
+      status: isFinished ? "finished" : isLive ? "live" : "upcoming",
+      final_home_score: isFinished ? f.home_score : null,
+      final_away_score: isFinished ? f.away_score : null,
+    };
+  });
+
+  const { data, error } = await supabase.from("matches").insert(rows).select();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ imported: data.length });
+}
