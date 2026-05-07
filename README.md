@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Football Predictions
+
+A football score prediction web app where users predict match scores and compete on a leaderboard.
+
+## Stack
+
+- **Frontend**: Next.js 16 (App Router) + TypeScript + Tailwind CSS
+- **Backend**: Supabase (Postgres + Auth)
+- **Hosting**: Vercel
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- A Supabase project
+
+### Setup
+
+1. Clone the repo and install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Run the SQL migration in your Supabase SQL editor (see `schema.sql`).
+
+4. Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Making a User an Admin
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run this SQL in the Supabase SQL editor:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sql
+UPDATE profiles SET role = 'admin' WHERE email = 'your-email@example.com';
+```
 
-## Learn More
+## Scoring
 
-To learn more about Next.js, take a look at the following resources:
+- **Exact score**: 3 points
+- **Correct outcome** (win/draw): 1 point
+- **Wrong prediction**: 0 points
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Pages
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Route | Access | Description |
+|-------|--------|-------------|
+| `/` | Public | Match listings |
+| `/login` | Public | Login |
+| `/register` | Public | Register |
+| `/matches/[id]` | Public | Match detail + prediction form |
+| `/dashboard` | Auth | User predictions history |
+| `/leaderboard` | Auth | Rankings |
+| `/admin` | Admin | Admin dashboard |
+| `/admin/tournaments` | Admin | Tournament management |
+| `/admin/matches` | Admin | Match management |
