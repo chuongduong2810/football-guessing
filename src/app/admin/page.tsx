@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Trophy, Swords, BarChart3 } from "lucide-react";
+import { Trophy, Swords, BarChart3, Users } from "lucide-react";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
 
-  const [tournamentsRes, matchesRes, predictionsRes] = await Promise.all([
+  const [tournamentsRes, matchesRes, predictionsRes, usersRes] = await Promise.all([
     supabase.from("tournaments").select("id", { count: "exact", head: true }),
     supabase.from("matches").select("id", { count: "exact", head: true }),
     supabase.from("predictions").select("id", { count: "exact", head: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
   ]);
 
   const stats = [
@@ -30,6 +31,12 @@ export default async function AdminDashboard() {
       icon: BarChart3,
       href: "#",
     },
+    {
+      label: "Users",
+      count: usersRes.count ?? 0,
+      icon: Users,
+      href: "/admin/users",
+    },
   ];
 
   return (
@@ -38,7 +45,7 @@ export default async function AdminDashboard() {
         Admin Dashboard
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
         {stats.map((stat) => (
           <Link
             key={stat.label}
@@ -70,6 +77,12 @@ export default async function AdminDashboard() {
           className="bg-terracotta text-ivory rounded-xl px-6 py-2.5 hover:bg-coral transition-colors font-medium"
         >
           Manage Matches
+        </Link>
+        <Link
+          href="/admin/users"
+          className="bg-terracotta text-ivory rounded-xl px-6 py-2.5 hover:bg-coral transition-colors font-medium"
+        >
+          Manage Users
         </Link>
       </div>
     </div>

@@ -63,12 +63,3 @@ body {
   animation: page-enter 0.3s ease-out;
 }
 
-@keyframes bar-loading {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
-}
-
-.loading-bar {
-  animation: bar-loading 1.2s ease-in-out infinite;
-}
