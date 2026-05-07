@@ -14,8 +14,9 @@ import {
   Clock,
   Target,
   Loader2,
+  Satellite,
 } from "lucide-react";
-import type { Match, Tournament, Profile } from "@/types/database";
+import type { Match, Tournament } from "@/types/database";
 
 type MatchWithPredictions = Match & {
   prediction_count: number;
@@ -46,6 +47,8 @@ export default function AdminResultsPage() {
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState<string | null>(null);
   const [recalculatingAll, setRecalculatingAll] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResults, setSyncResults] = useState<{ match: string; action: string }[] | null>(null);
 
   const fetchData = useCallback(async () => {
     const [tournamentsRes, matchesRes, predictionsRes, profilesRes] = await Promise.all([
@@ -190,6 +193,33 @@ export default function AdminResultsPage() {
     await fetchData();
   }
 
+  async function syncFromApi() {
+    setSyncing(true);
+    setSyncResults(null);
+    try {
+      const res = await fetch("/api/football", { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Sync failed");
+        setSyncing(false);
+        return;
+      }
+
+      if (data.synced > 0) {
+        toast.success(`Synced ${data.synced} match result(s) from API-Football`);
+        setSyncResults(data.results);
+        await fetchData();
+      } else {
+        toast.info(data.message || "No matches to sync — all up to date");
+        setSyncResults(data.results ?? []);
+      }
+    } catch {
+      toast.error("Failed to connect to API-Football");
+    }
+    setSyncing(false);
+  }
+
   const totalFinished = tournaments.reduce((s, t) => s + t.finished_matches, 0);
   const totalMatches = tournaments.reduce((s, t) => s + t.total_matches, 0);
   const totalPredictions = tournaments.reduce((s, t) => s + t.total_predictions, 0);
@@ -209,19 +239,51 @@ export default function AdminResultsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <h1 className="text-3xl font-serif font-bold text-near-black">
           Results & Scoring
         </h1>
-        <button
-          onClick={recalculateAll}
-          disabled={recalculatingAll}
-          className="flex items-center gap-2 bg-terracotta text-ivory rounded-xl px-5 py-2.5 hover:bg-coral transition-colors font-medium disabled:opacity-50 text-sm"
-        >
-          {recalculatingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
-          {recalculatingAll ? "Recalculating..." : "Recalculate All"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={syncFromApi}
+            disabled={syncing}
+            className="flex items-center gap-2 bg-near-black text-ivory rounded-xl px-5 py-2.5 hover:bg-dark-surface transition-colors font-medium disabled:opacity-50 text-sm"
+          >
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Satellite className="w-4 h-4" />}
+            {syncing ? "Syncing..." : "Sync Live Results"}
+          </button>
+          <button
+            onClick={recalculateAll}
+            disabled={recalculatingAll}
+            className="flex items-center gap-2 bg-terracotta text-ivory rounded-xl px-5 py-2.5 hover:bg-coral transition-colors font-medium disabled:opacity-50 text-sm"
+          >
+            {recalculatingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
+            {recalculatingAll ? "Recalculating..." : "Recalculate All"}
+          </button>
+        </div>
       </div>
+
+      {syncResults && syncResults.length > 0 && (
+        <div className="bg-ivory border border-border-cream rounded-xl p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-near-black flex items-center gap-2">
+              <Satellite className="w-4 h-4 text-terracotta" />
+              Last Sync Results
+            </h3>
+            <button onClick={() => setSyncResults(null)} className="text-xs text-stone hover:text-near-black">
+              Dismiss
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {syncResults.map((r, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <span className="text-near-black">{r.match}</span>
+                <span className="text-xs text-terracotta font-medium bg-terracotta/10 px-2 py-0.5 rounded-full">{r.action}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-ivory border border-border-cream rounded-xl p-4">
