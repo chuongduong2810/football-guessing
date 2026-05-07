@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { Trophy, Calendar, Users, TrendingUp } from "lucide-react";
+import { Trophy, Users, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Countdown } from "@/components/countdown";
+import { CursorGlow } from "@/components/landing/cursor-glow";
+import { FloatingBalls } from "@/components/landing/floating-balls";
+import { Hero } from "@/components/landing/hero";
+import { HowItWorks, Features } from "@/components/landing/features";
 import type { Match } from "@/types/database";
 
 export default async function Home() {
@@ -31,79 +35,102 @@ export default async function Home() {
   const activeTournaments = new Set(allMatches.map((m) => m.tournament_id)).size;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
-      <section className="text-center mb-16">
-        <h1 className="font-serif text-4xl md:text-5xl font-medium text-near-black mb-4">
-          Football Predictions
-        </h1>
-        <p className="text-olive text-lg max-w-2xl mx-auto">
-          Predict match scores, earn points, and compete with friends on the leaderboard.
-        </p>
-      </section>
+    <div className="relative">
+      <CursorGlow />
+      <FloatingBalls />
 
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-16">
-        <StatCard icon={<Calendar className="w-5 h-5 text-terracotta" />} label="Total Matches" value={allMatches.length} />
-        <StatCard icon={<Users className="w-5 h-5 text-terracotta" />} label="Total Predictions" value={totalPredictions} />
-        <StatCard icon={<TrendingUp className="w-5 h-5 text-terracotta" />} label="Tournaments" value={activeTournaments} />
-      </section>
+      <div className="relative z-10">
+        <Hero
+          stats={{
+            matches: allMatches.length,
+            predictions: totalPredictions,
+            tournaments: activeTournaments,
+          }}
+        />
 
-      {live.length > 0 && (
-        <Section title="Live Matches">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {live.map((match) => (
-              <MatchCard key={match.id} match={match} predictionCount={predictionCounts.get(match.id) ?? 0} />
-            ))}
+        <HowItWorks />
+
+        {(live.length > 0 || upcoming.length > 0 || finished.length > 0) && (
+          <div className="max-w-6xl mx-auto px-4 pb-16">
+            {live.length > 0 && (
+              <Section title="Live Now" badge="LIVE" badgeColor="bg-red-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {live.map((match) => (
+                    <MatchCard key={match.id} match={match} predictionCount={predictionCounts.get(match.id) ?? 0} />
+                  ))}
+                </div>
+              </Section>
+            )}
+
+            {upcoming.length > 0 && (
+              <Section title="Upcoming Matches">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {upcoming.slice(0, 6).map((match) => (
+                    <MatchCard key={match.id} match={match} predictionCount={predictionCounts.get(match.id) ?? 0} />
+                  ))}
+                </div>
+                {upcoming.length > 6 && (
+                  <div className="text-center mt-6">
+                    <Link href="/dashboard" className="inline-flex items-center gap-2 text-terracotta hover:text-coral text-sm font-medium transition-colors">
+                      View all {upcoming.length} matches <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                )}
+              </Section>
+            )}
+
+            {finished.length > 0 && (
+              <Section title="Recent Results">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {finished.slice(0, 4).map((match) => (
+                    <MatchCard key={match.id} match={match} predictionCount={predictionCounts.get(match.id) ?? 0} />
+                  ))}
+                </div>
+              </Section>
+            )}
           </div>
-        </Section>
-      )}
+        )}
 
-      {upcoming.length > 0 && (
-        <Section title="Upcoming Matches">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {upcoming.map((match) => (
-              <MatchCard key={match.id} match={match} predictionCount={predictionCounts.get(match.id) ?? 0} />
-            ))}
+        {allMatches.length === 0 && (
+          <div className="text-center py-20 max-w-md mx-auto px-4">
+            <Trophy className="w-12 h-12 text-stone mx-auto mb-4" />
+            <p className="text-olive text-lg">No matches available yet.</p>
+            <p className="text-stone text-sm mt-1">Check back soon for upcoming fixtures.</p>
           </div>
-        </Section>
-      )}
+        )}
 
-      {finished.length > 0 && (
-        <Section title="Finished Matches">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {finished.map((match) => (
-              <MatchCard key={match.id} match={match} predictionCount={predictionCounts.get(match.id) ?? 0} />
-            ))}
-          </div>
-        </Section>
-      )}
+        <Features />
 
-      {allMatches.length === 0 && (
-        <div className="text-center py-20">
-          <Trophy className="w-12 h-12 text-stone mx-auto mb-4" />
-          <p className="text-olive text-lg">No matches available yet.</p>
-          <p className="text-stone text-sm mt-1">Check back soon for upcoming fixtures.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="bg-ivory border border-border-cream rounded-2xl p-6 flex items-center gap-4">
-      <div className="bg-parchment rounded-xl p-3">{icon}</div>
-      <div>
-        <p className="text-2xl font-serif font-medium text-near-black">{value}</p>
-        <p className="text-stone text-sm">{label}</p>
+        <section className="text-center py-20 md:py-28 px-4">
+          <h2 className="font-serif text-3xl md:text-4xl font-medium text-near-black mb-4">
+            Ready to play?
+          </h2>
+          <p className="text-olive max-w-md mx-auto mb-8">
+            Join now and start predicting. It&apos;s free, fun, and competitive.
+          </p>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 bg-terracotta text-ivory rounded-xl px-8 py-3.5 font-medium hover:bg-coral transition-colors text-lg"
+          >
+            Create Account <ArrowRight className="w-5 h-5" />
+          </Link>
+        </section>
       </div>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, badge, badgeColor }: { title: string; children: React.ReactNode; badge?: string; badgeColor?: string }) {
   return (
     <section className="mb-12">
-      <h2 className="font-serif text-2xl font-medium text-near-black mb-6">{title}</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <h2 className="font-serif text-2xl font-medium text-near-black">{title}</h2>
+        {badge && (
+          <span className={`text-[10px] uppercase tracking-wider text-white px-2 py-0.5 rounded-full font-medium animate-pulse ${badgeColor}`}>
+            {badge}
+          </span>
+        )}
+      </div>
       {children}
     </section>
   );
@@ -113,7 +140,7 @@ function MatchCard({ match, predictionCount }: { match: Match; predictionCount: 
   return (
     <Link
       href={`/matches/${match.id}`}
-      className="bg-ivory border border-border-cream rounded-2xl p-6 hover:shadow-sm transition block"
+      className="group bg-ivory border border-border-cream rounded-2xl p-6 hover:shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:border-border-warm transition-all duration-300 block"
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-stone text-xs flex items-center gap-1.5">
@@ -134,7 +161,7 @@ function MatchCard({ match, predictionCount }: { match: Match; predictionCount: 
             </p>
           </div>
         ) : (
-          <span className="text-stone font-serif text-lg">vs</span>
+          <span className="text-stone font-serif text-lg group-hover:text-terracotta transition-colors">vs</span>
         )}
         <TeamDisplay name={match.away_team} logo={match.away_logo} />
       </div>
@@ -170,7 +197,7 @@ function TeamDisplay({ name, logo }: { name: string; logo: string | null }) {
 function StatusBadge({ status }: { status: Match["status"] }) {
   const config = {
     upcoming: { label: "Open", classes: "bg-green-50 text-green-700 border-green-200" },
-    live: { label: "Live", classes: "bg-amber-50 text-amber-700 border-amber-200" },
+    live: { label: "Live", classes: "bg-amber-50 text-amber-700 border-amber-200 animate-pulse" },
     finished: { label: "Finished", classes: "bg-gray-50 text-gray-500 border-gray-200" },
   };
   const { label, classes } = config[status];
