@@ -196,7 +196,20 @@ export default function TournamentsAdmin() {
       )}
 
       {loading ? (
-        <p className="text-stone">Loading...</p>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-ivory border border-border-cream rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="skeleton h-8 w-8 rounded" />
+                <div className="skeleton h-4 w-32" />
+              </div>
+              <div className="flex gap-2">
+                <div className="skeleton h-8 w-8 rounded-lg" />
+                <div className="skeleton h-8 w-8 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : tournaments.length === 0 ? (
         <p className="text-stone">No tournaments yet.</p>
       ) : (
